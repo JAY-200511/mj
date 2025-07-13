@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>STONORA Ultimate Assistant</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #075e54;
+      --secondary: #128c7e;
+      --accent: #25d366;
+      --text: #333;
+      --bot-bubble: #ffffff;
+      --user-bubble: #dcf8c6;
+      --bg-color: #e5ddd5;
+      --header-bg: linear-gradient(135deg, #075e54, #128c7e);
+      --input-bg: #ffffff;
+      --message-time: #999999;
+      --typing-indicator: #999999;
+    }
+
+    .dark-mode {
+      --primary: #25d366;
+      --secondary: #128c7e;
+      --accent: #25d366;
+      --text: #e0e0e0;
+      --bot-bubble: #2d2d2d;
+      --user-bubble: #005c4b;
+      --bg-color: #0a1410;
+      --header-bg: linear-gradient(135deg, #0a3d2d, #075e54);
+      --input-bg: #1f2c28;
+      --message-time: #aaaaaa;
+      --typing-indicator: #aaaaaa;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Roboto, sans-serif;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg-color);
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .chat-container {
+      width: 100%;
+      max-width: 450px;
+      height: 90vh;
+      margin: 20px;
+      border-radius: 15px;
+      overflow: hidden;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-color);
+    }
+
+    .header {
+      background: var(--header-bg);
+      color: white;
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      position: relative;
+    }
+
+    .header img {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(255,255,255,0.3);
+    }
+
+    .header-info {
+      flex: 1;
+    }
+
+    .header h3 {
+      margin: 0;
+      font-weight: 600;
+      font-size: 18px;
+    }
+
+    .header p {
+      margin: 3px 0 0;
+      font-size: 12px;
+      opacity: 0.9;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      background: var(--accent);
+      border-radius: 50%;
+      position: absolute;
+      right: 60px;
+      top: 20px;
+      animation: pulse 2s infinite;
+    }
+
+    .dark-mode-toggle {
+      position: absolute;
+      right: 20px;
+      top: 20px;
+      background: none;
+      border: none;
+      color: white;
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+
+    .chat-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 15px;
+      background: var(--bg-color) url('https://web.whatsapp.com/img/bg-chat-tile-light_a4be8c74.png');
+      background-blend-mode: overlay;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .dark-mode .chat-area {
+      background-image: url('https://web.whatsapp.com/img/bg-chat-tile-dark_a4be512e.png');
+    }
+
+    .message {
+      max-width: 85%;
+      padding: 12px 16px;
+      border-radius: 18px;
+      position: relative;
+      word-wrap: break-word;
+      line-height: 1.4;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .bot-message {
+      background: var(--bot-bubble);
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+      color: var(--text);
+    }
+
+    .user-message {
+      background: var(--user-bubble);
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+      color: white;
+    }
+
+    .message-time {
+      display: block;
+      font-size: 10px;
+      text-align: right;
+      margin-top: 4px;
+      opacity: 0.7;
+      color: var(--message-time);
+    }
+
+    .quick-replies {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .quick-reply {
+      background: var(--secondary);
+      color: white;
+      padding: 8px 15px;
+      border-radius: 20px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      border: none;
+      outline: none;
+    }
+
+    .quick-reply:hover {
+      background: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    .service-card {
+      background: var(--bot-bubble);
+      border-radius: 12px;
+      padding: 12px;
+      margin: 8px 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border-left: 4px solid var(--accent);
+      color: var(--text);
+    }
+
+    .service-card h4 {
+      margin: 0 0 5px;
+      color: var(--primary);
+    }
+
+    .service-card p {
+      margin: 0;
+      font-size: 13px;
+    }
+
+    .service-card .price {
+      color: var(--accent);
+      font-weight: bold;
+      margin-top: 5px;
+    }
+
+    .payment-btn {
+      background: linear-gradient(135deg, #25d366, #128c7e);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 25px;
+      font-weight: bold;
+      margin-top: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);
+      width: 100%;
+      justify-content: center;
+    }
+
+    .input-area {
+      display: flex;
+      padding: 15px;
+      background: var(--input-bg);
+      border-top: 1px solid rgba(0,0,0,0.1);
+      align-items: center;
+    }
+
+    #user-input {
+      flex: 1;
+      padding: 12px 18px;
+      border: 1px solid rgba(0,0,0,0.1);
+      border-radius: 25px;
+      outline: none;
+      font-size: 15px;
+      transition: all 0.3s;
+      background: var(--input-bg);
+      color: var(--text);
+    }
+
+    #user-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(37, 211, 102, 0.2);
+    }
+
+    #send-btn, #voice-btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 45px;
+      height: 45px;
+      margin-left: 10px;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 18px;
+      transition: all 0.3s;
+    }
+
+    #send-btn:hover, #voice-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+    }
+
+    .typing-indicator {
+      display: flex;
+      padding: 10px 15px;
+      background: var(--bot-bubble);
+      border-radius: 18px;
+      align-self: flex-start;
+      margin-bottom: 10px;
+    }
+
+    .typing-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--typing-indicator);
+      border-radius: 50%;
+      margin: 0 2px;
+      animation: typingAnimation 1.4s infinite ease-in-out;
+    }
+
+    .typing-dot:nth-child(1) { animation-delay: 0s; }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typingAnimation {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-5px); }
+    }
+
+    .language-selector {
+      position: absolute;
+      right: 90px;
+      top: 20px;
+    }
+
+    .language-btn {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 14px;
+      cursor: pointer;
+      padding: 2px 5px;
+      border-radius: 3px;
+    }
+
+    .language-btn:hover {
+      background: rgba(255,255,255,0.2);
+    }
+
+    .voice-recording {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 100;
+    }
+
+    .voice-animation {
+      display: flex;
+      gap: 3px;
+      align-items: flex-end;
+      height: 20px;
+    }
+
+    .voice-bar {
+      width: 3px;
+      background: white;
+      border-radius: 3px;
+      animation: voiceBarAnimation 1s infinite ease-in-out;
+    }
+
+    @keyframes voiceBarAnimation {
+      0%, 100% { height: 5px; }
+      50% { height: 20px; }
+    }
+
+    @media (max-width: 500px) {
+      .chat-container {
+        margin: 0;
+        border-radius: 0;
+        height: 100vh;
+        max-width: 100%;
+      }
+      
+      .header {
+        padding: 12px 15px;
+      }
+      
+      .header h3 {
+        font-size: 16px;
+      }
+      
+      .status-dot {
+        right: 50px;
+        top: 18px;
+      }
+      
+      .language-selector {
+        right: 80px;
+      }
+      
+      .dark-mode-toggle {
+        right: 15px;
+      }
+      
+      .message {
+        max-width: 90%;
+        padding: 10px 14px;
+      }
+      
+      .service-card {
+        padding: 10px;
+      }
+      
+      .input-area {
+        padding: 12px;
+      }
+      
+      #user-input {
+        padding: 10px 15px;
+        font-size: 14px;
+      }
+      
+      #send-btn, #voice-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+      }
+      
+      .quick-reply {
+        padding: 7px 12px;
+        font-size: 12px;
+      }
+      
+      .payment-btn {
+        padding: 8px 15px;
+        font-size: 14px;
+      }
+    }
+
+    @media (max-width: 400px) {
+      .header {
+        padding: 10px 12px;
+      }
+      
+      .header img {
+        width: 38px;
+        height: 38px;
+      }
+      
+      .chat-area {
+        padding: 15px 10px;
+      }
+      
+      .language-btn {
+        font-size: 12px;
+      }
+      
+      .voice-recording {
+        bottom: 70px;
+        padding: 8px 15px;
+        font-size: 14px;
+      }
+    }
+
+    @media (max-width: 350px) {
+      .header h3 {
+        font-size: 15px;
+      }
+      
+      .header p {
+        font-size: 11px;
+      }
+      
+      .quick-replies {
+        gap: 6px;
+      }
+      
+      .quick-reply {
+        padding: 6px 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-container">
+    <div class="header">
+      <img src="https://via.placeholder.com/150/075e54/ffffff?text=ST" alt="STONORA Logo">
+      <div class="header-info">
+        <h3>STONORA Ultimate Assistant</h3>
+        <p>Typically replies instantly</p>
+      </div>
+      <div class="status-dot"></div>
+      <div class="language-selector">
+        <button class="language-btn" id="language-btn">EN</button>
+      </div>
+      <button class="dark-mode-toggle" id="dark-mode-toggle">
+        <i class="fas fa-moon"></i>
+      </button>
+    </div>
+    
+    <div class="chat-area" id="chat-area">
+      <div class="typing-indicator">
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+      </div>
+    </div>
+    
+    <div class="input-area">
+      <input type="text" id="user-input" placeholder="Type your message..." autocomplete="off">
+      <button id="voice-btn">
+        <i class="fas fa-microphone"></i>
+      </button>
+      <button id="send-btn">
+        <i class="fas fa-paper-plane"></i>
+      </button>
+    </div>
+  </div>
+
+  <div class="voice-recording" id="voice-recording" style="display: none;">
+    <div class="voice-animation">
+      <div class="voice-bar" style="animation-delay: 0s"></div>
+      <div class="voice-bar" style="animation-delay: 0.2s"></div>
+      <div class="voice-bar" style="animation-delay: 0.4s"></div>
+      <div class="voice-bar" style="animation-delay: 0.6s"></div>
+      <div class="voice-bar" style="animation-delay: 0.8s"></div>
+    </div>
+    <span>Recording... Tap to send</span>
+  </div>
+
+  <script>
+    // DOM Elements
+    const chatArea = document.getElementById('chat-area');
+    const userInput = document.getElementById('user-input');
+    const sendBtn = document.getElementById('send-btn');
+    const voiceBtn = document.getElementById('voice-btn');
+    const voiceRecording = document.getElementById('voice-recording');
+    const darkModeToggle = document.getElementById('dark-mode-toggle');
+    const languageBtn = document.getElementById('language-btn');
+
+    // State management
+    let currentState = 'init';
+    let userData = {};
+    let isDarkMode = false;
+    let currentLanguage = 'en';
+    let recognition = null;
+
+    // Dark Mode Toggle
+    darkModeToggle.addEventListener('click', () => {
+      isDarkMode = !isDarkMode;
+      document.body.classList.toggle('dark-mode', isDarkMode);
+      darkModeToggle.innerHTML = isDarkMode 
+        ? '<i class="fas fa-sun"></i>' 
+        : '<i class="fas fa-moon"></i>';
+      localStorage.setItem('darkMode', isDarkMode);
+    });
+
+    if (localStorage.getItem('darkMode') === 'true') {
+      isDarkMode = true;
+      document.body.classList.add('dark-mode');
+      darkModeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+    }
+
+    // Multi-language Support
+    const translations = {
+      en: {
+        welcome: "🌟 <strong>Welcome to STONORA Premium Services!</strong>",
+        maintenance: "🛠️ <strong>Maintenance Services</strong>",
+        pricing: "💰 <strong>STONORA Pricing</strong>",
+        bookConfirm: "✅ <strong>Booking Confirmation</strong>",
+        payment: "💳 <strong>Secure Payment</strong>",
+        typeMessage: "Type your message...",
+        recording: "Recording... Tap to send"
+      },
+      hi: {
+        welcome: "🌟 <strong>STONORA प्रीमियम सेवाओं में आपका स्वागत है!</strong>",
+        maintenance: "🛠️ <strong>रखरखाव सेवाएं</strong>",
+        pricing: "💰 <strong>STONORA मूल्य निर्धारण</strong>",
+        bookConfirm: "✅ <strong>बुकिंग पुष्टिकरण</strong>",
+        payment: "💳 <strong>सुरक्षित भुगतान</strong>",
+        typeMessage: "अपना संदेश टाइप करें...",
+        recording: "रिकॉर्डिंग... भेजने के लिए टैप करें"
+      },
+      mr: {
+        welcome: "🌟 <strong>STONORA प्रीमियम सेवांमध्ये आपले स्वागत आहे!</strong>",
+        maintenance: "🛠️ <strong>देखभाल सेवा</strong>",
+        pricing: "💰 <strong>STONORA किंमत</strong>",
+        bookConfirm: "✅ <strong>बुकिंग पुष्टीकरण</strong>",
+        payment: "💳 <strong>सुरक्षित पेमेंट</strong>",
+        typeMessage: "तुमचा संदेश टाइप करा...",
+        recording: "रेकॉर्डिंग... पाठवण्यासाठी टॅप करा"
+      }
+    };
+
+    languageBtn.addEventListener('click', () => {
+      const languages = ['en', 'hi', 'mr'];
+      const currentIndex = languages.indexOf(currentLanguage);
+      currentLanguage = languages[(currentIndex + 1) % languages.length];
+      languageBtn.textContent = currentLanguage.toUpperCase();
+      userInput.placeholder = translations[currentLanguage].typeMessage;
+      if (botResponses[currentState]) {
+        renderBotResponse(currentState);
+      }
+    });
+
+    // Voice Message Support
+    function initVoiceRecognition() {
+      try {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = currentLanguage === 'en' ? 'en-US' : 'hi-IN';
+
+        recognition.onstart = () => {
+          voiceRecording.style.display = 'flex';
+          voiceRecording.querySelector('span').textContent = translations[currentLanguage].recording;
+        };
+
+        recognition.onresult = (event) => {
+          const transcript = event.results[0][0].transcript;
+          processUserInput(transcript);
+        };
+
+        recognition.onerror = (event) => {
+          console.error('Voice recognition error', event.error);
+          addMessage("Sorry, I couldn't understand that. Please try again.", false);
+        };
+
+        recognition.onend = () => {
+          voiceRecording.style.display = 'none';
+        };
+      } catch (e) {
+        console.error("Speech recognition not supported", e);
+        voiceBtn.style.display = 'none';
+      }
+    }
+
+    voiceBtn.addEventListener('mousedown', () => {
+      if (recognition) recognition.start();
+    });
+
+    voiceBtn.addEventListener('touchstart', () => {
+      if (recognition) recognition.start();
+    });
+
+    voiceRecording.addEventListener('click', () => {
+      if (recognition) recognition.stop();
+    });
+
+    initVoiceRecognition();
+
+    // Real-Time Database Mock
+    class MockDatabase {
+      constructor() {
+        this.data = {
+          users: {},
+          conversations: {}
+        };
+      }
+
+      async saveUserData(userId, data) {
+        this.data.users[userId] = this.data.users[userId] || {};
+        Object.assign(this.data.users[userId], data);
+        return true;
+      }
+
+      async logMessage(userId, message, isUser) {
+        const timestamp = new Date().toISOString();
+        this.data.conversations[userId] = this.data.conversations[userId] || [];
+        this.data.conversations[userId].push({
+          message,
+          isUser,
+          timestamp
+        });
+        return true;
+      }
+
+      async getUserHistory(userId) {
+        return this.data.conversations[userId] || [];
+      }
+    }
+
+    const db = new MockDatabase();
+
+    // Enhanced Bot Responses
+    const botResponses = {
+      'init': {
+        getMessage: () => ({
+          en: `${translations.en.welcome}\n\nHow can I assist you today?`,
+          hi: `${translations.hi.welcome}\n\nमैं आपकी कैसे सहायता कर सकता हूँ?`,
+          mr: `${translations.mr.welcome}\n\nमी तुमची कशी मदत करू शकतो?`
+        }),
+        options: [
+          { text: { en: "🛠️ Maintenance", hi: "🛠️ रखरखाव", mr: "🛠️ देखभाल" }, value: "maintenance" },
+          { text: { en: "🛒 Grocery Delivery", hi: "🛒 किराना डिलीवरी", mr: "🛒 किराणा डिलिव्हरी" }, value: "grocery" },
+          { text: { en: "🐜 Pest Control", hi: "🐜 कीट नियंत्रण", mr: "🐜 कीट नियंत्रण" }, value: "pest" },
+          { text: { en: "💲 Pricing Plans", hi: "💲 मूल्य योजना", mr: "💲 किंमत योजना" }, value: "pricing" },
+          { text: { en: "📅 Book Appointment", hi: "📅 अपॉइंटमेंट बुक करें", mr: "📅 अपॉइंटमेंट बुक करा" }, value: "appointment" },
+          { text: { en: "📝 New Complaint", hi: "📝 नई शिकायत", mr: "📝 नवीन तक्रार" }, value: "complaint" }
+        ]
+      },
+      
+      'maintenance': {
+        getMessage: () => ({
+          en: `${translations.en.maintenance}\n\nOur certified technicians provide:`,
+          hi: `${translations.hi.maintenance}\n\nहमारे प्रमाणित तकनीशियन प्रदान करते हैं:`,
+          mr: `${translations.mr.maintenance}\n\nआमचे प्रमाणित तंत्रज्ञ प्रदान करतात:`
+        }),
+        getCards: () => ([
+          {
+            title: { en: "Basic Maintenance Plan", hi: "बेसिक रखरखाव योजना", mr: "मूलभूत देखभाल योजना" },
+            description: { 
+              en: "Bi-monthly electrical & plumbing checks", 
+              hi: "द्विमासिक विद्युत और प्लंबिंग जांच",
+              mr: "द्विमासिक वीज आणि प्लंबिंग तपासणी"
+            },
+            price: "₹250/month"
+          },
+          {
+            title: { en: "Premium Plan", hi: "प्रीमियम योजना", mr: "प्रीमियम योजना" },
+            description: { 
+              en: "Includes AC/RO servicing + priority support", 
+              hi: "एसी/आरओ सर्विसिंग + प्राथमिकता समर्थन शामिल",
+              mr: "एसी/आरओ सर्व्हिसिंग + प्राधान्य समर्थन समाविष्ट"
+            },
+            price: "₹400/month"
+          }
+        ]),
+        options: [
+          { text: { en: "Book Basic Plan", hi: "बेसिक योजना बुक करें", mr: "मूलभूत योजना बुक करा" }, value: "book basic" },
+          { text: { en: "Book Premium", hi: "प्रीमियम बुक करें", mr: "प्रीमियम बुक करा" }, value: "book premium" },
+          { text: { en: "Emergency Request", hi: "आपातकालीन अनुरोध", mr: "आणीबाणी विनंती" }, value: "emergency" },
+          { text: { en: "← Back", hi: "← वापस", mr: "← मागे" }, value: "init" }
+        ]
+      },
+      
+      'pricing': {
+        getMessage: () => ({
+          en: translations.en.pricing,
+          hi: translations.hi.pricing,
+          mr: translations.mr.pricing
+        }),
+        getCards: () => ([
+          {
+            title: { en: "Basic Package", hi: "बेसिक पैकेज", mr: "मूलभूत पॅकेज" },
+            description: { 
+              en: "All essential services", 
+              hi: "सभी आवश्यक सेवाएं",
+              mr: "सर्व आवश्यक सेवा"
+            },
+            price: "₹250/month"
+          },
+          {
+            title: { en: "Pest Control", hi: "कीट नियंत्रण", mr: "कीट नियंत्रण" },
+            description: { 
+              en: "Government-approved treatments", 
+              hi: "सरकार-अनुमोदित उपचार",
+              mr: "सरकार-मान्य उपचार"
+            },
+            price: "₹800/year"
+          }
+        ]),
+        options: [
+          { text: { en: "Subscribe Now", hi: "अभी सदस्यता लें", mr: "आत्ताच सदस्यता घ्या" }, value: "subscribe" },
+          { text: { en: "Payment Options", hi: "भुगतान विकल्प", mr: "पेमेंट पर्याय" }, value: "payment" },
+          { text: { en: "Special Offers", hi: "विशेष ऑफर", mr: "विशेष ऑफर" }, value: "offers" }
+        ]
+      },
+      
+      'book basic': {
+        getMessage: () => ({
+          en: `${translations.en.bookConfirm}\n\nYou've selected:\n\nBasic Maintenance Plan (₹250/month)\nNext inspection: <strong>15th June</strong>\n\nPlease complete your registration:`,
+          hi: `${translations.hi.bookConfirm}\n\nआपने चुना:\n\nबेसिक रखरखाव योजना (₹250/माह)\nअगली जांच: <strong>15 जून</strong>\n\nकृपया अपना पंजीकरण पूरा करें:`,
+          mr: `${translations.mr.bookConfirm}\n\nतुम्ही निवडले:\n\nमूलभूत देखभाल योजना (₹250/महिना)\nपुढील तपासणी: <strong>15 जून</strong>\n\nकृपया तुमची नोंदणी पूर्ण करा:`
+        }),
+        options: [
+          { text: { en: "Pay Now", hi: "अभी भुगतान करें", mr: "आत्ताच पैसे द्या" }, value: "payment" },
+          { text: { en: "Pay Later", hi: "बाद में भुगतान करें", mr: "नंतर पैसे द्या" }, value: "later" },
+          { text: { en: "Change Plan", hi: "योजना बदलें", mr: "योजना बदला" }, value: "maintenance" }
+        ]
+      },
+      
+      'payment': {
+        getMessage: () => ({
+          en: translations.en.payment,
+          hi: translations.hi.payment,
+          mr: translations.mr.payment
+        }),
+        options: [
+          { text: { en: "UPI Payment", hi: "UPI भुगतान", mr: "UPI पेमेंट" }, value: "upi" },
+          { text: { en: "Net Banking", hi: "नेट बैंकिंग", mr: "नेट बँकिंग" }, value: "netbanking" },
+          { text: { en: "← Back", hi: "← वापस", mr: "← मागे" }, value: "book basic" }
+        ]
+      }
+    };
+
+    // Chat Functions
+    function showTyping() {
+      const typingDiv = document.createElement('div');
+      typingDiv.className = 'typing-indicator';
+      typingDiv.innerHTML = `
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+      `;
+      chatArea.appendChild(typingDiv);
+      chatArea.scrollTop = chatArea.scrollHeight;
+      return typingDiv;
+    }
+
+    async function addMessage(text, isUser = false, userId = 'demo-user') {
+      const typingIndicators = document.querySelectorAll('.typing-indicator');
+      typingIndicators.forEach(indicator => indicator.remove());
+      
+      await db.logMessage(userId, text, isUser);
+      
+      const msgDiv = document.createElement('div');
+      msgDiv.className = isUser ? 'message user-message' : 'message bot-message';
+      
+      const now = new Date();
+      const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      
+      msgDiv.innerHTML = `
+        ${text.replace(/\n/g, '<br>')}
+        <span class="message-time">${timeString}</span>
+      `;
+      
+      chatArea.appendChild(msgDiv);
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
+
+    async function renderBotResponse(state, userId = 'demo-user') {
+      const response = botResponses[state];
+      if (!response) return;
+      
+      const localizedMessage = response.getMessage()[currentLanguage];
+      
+      await addMessage(localizedMessage, false, userId);
+      
+      if (response.getCards) {
+        const cards = response.getCards();
+        cards.forEach(card => {
+          const cardDiv = document.createElement('div');
+          cardDiv.className = 'service-card';
+          cardDiv.innerHTML = `
+            <h4>${card.title[currentLanguage]}</h4>
+            <p>${card.description[currentLanguage]}</p>
+            <p class="price">${card.price}</p>
+          `;
+          chatArea.appendChild(cardDiv);
+        });
+      }
+      
+      if (response.options) {
+        const repliesDiv = document.createElement('div');
+        repliesDiv.className = 'quick-replies';
+        
+        response.options.forEach(option => {
+          const btn = document.createElement('button');
+          btn.className = 'quick-reply';
+          btn.textContent = option.text[currentLanguage];
+          btn.onclick = () => {
+            userInput.value = '';
+            processUserInput(option.value, userId);
+          };
+          repliesDiv.appendChild(btn);
+        });
+        
+        chatArea.appendChild(repliesDiv);
+      }
+      
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
+
+    async function processUserInput(input, userId = 'demo-user') {
+      await addMessage(input, true, userId);
+      
+      const typingIndicator = showTyping();
+      
+      setTimeout(async () => {
+        typingIndicator.remove();
+        
+        if (botResponses[input]) {
+          currentState = input;
+          await renderBotResponse(currentState, userId);
+        } else {
+          await addMessage(
+            currentLanguage === 'en' ? 
+            "Sorry, I didn't understand that. Please select an option below." :
+            currentLanguage === 'hi' ?
+            "क्षमा करें, मैं समझ नहीं पाया। कृपया नीचे एक विकल्प चुनें।" :
+            "माफ करा, मला समजले नाही. कृपया खालील पर्याय निवडा.",
+            false,
+            userId
+          );
+          await renderBotResponse(currentState, userId);
+        }
+      }, 1500);
+    }
+
+    // Handle window resize
+    function handleResize() {
+      chatArea.scrollTop = chatArea.scrollHeight;
+      if (window.innerWidth < 400) {
+        voiceRecording.style.bottom = '70px';
+      } else {
+        voiceRecording.style.bottom = '80px';
+      }
+    }
+
+    window.addEventListener('resize', handleResize);
+
+    // Initialize
+    window.onload = async function() {
+      handleResize();
+      const userHistory = await db.getUserHistory('demo-user');
+      
+      if (userHistory.length > 0) {
+        for (const msg of userHistory) {
+          await addMessage(msg.message, msg.isUser, 'demo-user');
+        }
+        currentState = 'init';
+        await renderBotResponse(currentState, 'demo-user');
+      } else {
+        setTimeout(async () => {
+          await processUserInput('init', 'demo-user');
+        }, 1000);
+      }
+    };
+
+    // Event Listeners
+    sendBtn.addEventListener('click', () => {
+      const message = userInput.value.trim();
+      if (message) {
+        processUserInput(message, 'demo-user');
+        userInput.value = '';
+      }
+    });
+
+    userInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter' && userInput.value.trim()) {
+        processUserInput(userInput.value.trim(), 'demo-user');
+        userInput.value = '';
+      }
+    });
+  </script>
+</body>
+</html>
